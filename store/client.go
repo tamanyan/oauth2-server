@@ -5,7 +5,7 @@ import (
 	// "sync"
 	"encoding/json"
 	// "fmt"
-	"log"
+	// "log"
 
 	"github.com/tidwall/buntdb"
 	"github.com/tamanyan/oauth2-server/models"
@@ -33,7 +33,6 @@ type ClientStore struct {
 func (cs *ClientStore) GetByID(id string) (cli oauth2.ClientInfo, err error) {
 	verr := cs.db.View(func(tx *buntdb.Tx) (err error) {
 		jv, err := tx.Get(id)
-		log.Println(err)
 		if err != nil {
 			return
 		}

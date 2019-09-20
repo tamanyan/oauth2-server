@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
+	// "time"
 
 	"github.com/tamanyan/oauth2-server/oauth2"
 	"github.com/tamanyan/oauth2-server/errors"
@@ -463,7 +463,7 @@ func (s *Server) GetTokenData(ti oauth2.TokenInfo) (data map[string]interface{})
 	data = map[string]interface{}{
 		"access_token": ti.GetAccess(),
 		"token_type":   s.Config.TokenType,
-		"expires_in":   int64(ti.GetAccessExpiresIn() / time.Second),
+		"expired_at":   int64(ti.GetAccessCreateAt().Add(ti.GetAccessExpiresIn()).Unix()),
 	}
 
 	if scope := ti.GetScope(); scope != "" {

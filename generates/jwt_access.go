@@ -41,9 +41,12 @@ type JWTAccessGenerate struct {
 
 // Token based on the UUID generated token
 func (a *JWTAccessGenerate) Token(data *oauth2.GenerateBasic, isGenRefresh bool) (access, refresh string, err error) {
+	Jti := uuid.NewSHA1(uuid.Must(uuid.NewRandom()), []byte(data.UserID)).Bytes()
 	claims := &JWTAccessClaims{
 		StandardClaims: jwt.StandardClaims{
+			Id:        base64.URLEncoding.EncodeToString(Jti),
 			Audience:  data.Client.GetID(),
+			IssuedAt:  time.Now().Unix(),
 			Subject:   data.UserID,
 			ExpiresAt: data.TokenInfo.GetAccessCreateAt().Add(data.TokenInfo.GetAccessExpiresIn()).Unix(),
 		},

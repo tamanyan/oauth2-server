@@ -12,6 +12,8 @@ import (
 	"github.com/tamanyan/oauth2-server/models"
 	"github.com/tamanyan/oauth2-server/server"
 	"github.com/tamanyan/oauth2-server/store"
+	"github.com/tamanyan/oauth2-server/generates"
+	"github.com/dgrijalva/jwt-go"
 	// "golang.org/x/oauth2/clientcredentials"
 )
 
@@ -23,14 +25,15 @@ func main() {
 	manager := manage.NewDefaultManager()
 	// token memory store
 	manager.MustTokenStorage(store.NewFileTokenStore("./tmp/storage/token.db"))
+	manager.MapAccessGenerate(generates.NewJWTAccessGenerate([]byte("00000000"), jwt.SigningMethodHS512))
 
 	// client memory store
 	clientStore, err := store.NewClientStore("./tmp/storage/client.db")
 	if err != nil {
 		log.Fatal(err)
 	}
-	clientStore.Set("000000", &models.Client{
-		ID:     "000000",
+	clientStore.Set("sample", &models.Client{
+		ID:     "sample",
 		Secret: "999999",
 		Domain: "http://localhost",
 	})
@@ -41,18 +44,13 @@ func main() {
 	srv.SetClientInfoHandler(server.ClientFormHandler)
 
 	srv.SetClientAuthorizedHandler(func(clientID string, grant oauth2.GrantType) (allowed bool, err error) {
-		log.Println(clientID, grant)
+		// log.Println(clientID, grant)
 		allowed = true
 		return
 	})
 
 	srv.SetInternalErrorHandler(func(err error) (re *errors.Response) {
 		log.Println("Internal Error:", err.Error())
-		// gerr := goerrors.New("error")
-		// gerr = goerrors.Wrap(err, "open failed")
-		// gerr = goerrors.Wrap(err, "read config failed")
-
-		// fmt.Printf("%+v\n", gerr)
 		return
 	})
 
@@ -60,15 +58,8 @@ func main() {
 		log.Println("Response Error:", re.Error.Error())
 	})
 
-	http.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
-		err := srv.HandleAuthorizeRequest(w, r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	})
-
 	srv.SetPasswordAuthorizationHandler(func(username, password string) (userID string, err error) {
-		log.Println(username, password)
+		// log.Println(username, password)
 		if username == "test" && password == "test" {
 			userID = "test"
 			return
@@ -77,9 +68,10 @@ func main() {
 		return
 	})
 
-	http.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/oauth/token", func(w http.ResponseWriter, r *http.Request) {
 		err := srv.HandleTokenRequest(w, r)
 		if err != nil {
+			log.Println("/oauth2/token err", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
