@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/dgrijalva/jwt-go"
@@ -17,11 +18,15 @@ import (
 	"github.com/tamanyan/oauth2-server/store"
 )
 
-func newOAuth2Server() *server.Server {
+var (
+	secretKey = "sample_pwd"
+)
+
+func newManager() oauth2.Manager {
 	manager := manage.NewDefaultManager()
 	// token memory store
 	manager.MustTokenStorage(store.NewFileTokenStore("./tmp/storage/token.db"))
-	manager.MapAccessGenerate(generates.NewJWTAccessGenerate([]byte("00000000"), jwt.SigningMethodHS512))
+	manager.MapAccessGenerate(generates.NewJWTAccessGenerate([]byte(secretKey), jwt.SigningMethodHS512))
 
 	// client memory store
 	clientStore, err := store.NewClientStore("./tmp/storage/client.db")
@@ -34,7 +39,7 @@ func newOAuth2Server() *server.Server {
 		Domain: "http://localhost",
 	})
 	manager.MapClientStorage(clientStore)
-	return server.NewDefaultServer(manager)
+	return manager
 }
 
 func setupOAuth2ServerConfigcation(srv *server.Server) {
@@ -68,14 +73,36 @@ func setupOAuth2ServerConfigcation(srv *server.Server) {
 }
 
 func main() {
-	srv := newOAuth2Server()
+	manager := newManager()
+	srv := server.NewDefaultServer(manager)
 	setupOAuth2ServerConfigcation(srv)
 
 	e := echo.New()
 	e.Use(middleware.Recover())
+	e.Use(middleware.BodyLimit("1M"))
+	e.Use(middleware.CORS())
+	e.Use(middleware.Gzip())
+	e.Use(middleware.RequestID())
 	e.POST("/oauth2/token", func(c echo.Context) error {
 		err := srv.HandleTokenRequest(c)
 		return err
+	})
+
+	r := e.Group("/oauth2")
+	r.Use(middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningKey:    []byte(secretKey),
+		SigningMethod: "HS512",
+	}))
+	r.DELETE("/token", func(c echo.Context) error {
+		user := c.Get("user").(*jwt.Token)
+		err := manager.RemoveAccessToken(user.Raw)
+
+		log.Println(user.Raw)
+		if err != nil {
+			return c.NoContent(http.StatusInternalServerError)
+		}
+
+		return c.NoContent(http.StatusOK)
 	})
 
 	if os.Getenv("DEBUG") == "1" {
