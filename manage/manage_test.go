@@ -3,11 +3,11 @@ package manage_test
 import (
 	"testing"
 
-	"github.com/tamanyan/oauth2-server/oauth2"
+	. "github.com/smartystreets/goconvey/convey"
 	"github.com/tamanyan/oauth2-server/manage"
 	"github.com/tamanyan/oauth2-server/models"
+	"github.com/tamanyan/oauth2-server/oauth2"
 	"github.com/tamanyan/oauth2-server/store"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestManager(t *testing.T) {
@@ -16,7 +16,7 @@ func TestManager(t *testing.T) {
 
 		manager.MustTokenStorage(store.NewMemoryTokenStore())
 
-		clientStore := store.NewClientStore()
+		clientStore, _ := store.NewMemoryClientStore()
 		_ = clientStore.Set("1", &models.Client{
 			ID:     "1",
 			Secret: "11",

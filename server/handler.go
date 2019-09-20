@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tamanyan/oauth2-server/oauth2"
+	"github.com/labstack/echo"
 	"github.com/tamanyan/oauth2-server/errors"
+	"github.com/tamanyan/oauth2-server/oauth2"
 )
 
 type (
@@ -19,7 +20,7 @@ type (
 	ClientScopeHandler func(clientID, scope string) (allowed bool, err error)
 
 	// UserAuthorizationHandler get user id from request authorization
-	UserAuthorizationHandler func(w http.ResponseWriter, r *http.Request) (userID string, err error)
+	UserAuthorizationHandler func(c echo.Context) (userID string, err error)
 
 	// PasswordAuthorizationHandler get user id from username and password
 	PasswordAuthorizationHandler func(username, password string) (userID string, err error)
@@ -34,10 +35,10 @@ type (
 	InternalErrorHandler func(err error) (re *errors.Response)
 
 	// AuthorizeScopeHandler set the authorized scope
-	AuthorizeScopeHandler func(w http.ResponseWriter, r *http.Request) (scope string, err error)
+	AuthorizeScopeHandler func(c echo.Context) (scope string, err error)
 
 	// AccessTokenExpHandler set expiration date for the access token
-	AccessTokenExpHandler func(w http.ResponseWriter, r *http.Request) (exp time.Duration, err error)
+	AccessTokenExpHandler func(c echo.Context) (exp time.Duration, err error)
 
 	// ExtensionFieldsHandler in response to the access token with the extension of the field
 	ExtensionFieldsHandler func(ti oauth2.TokenInfo) (fieldsValue map[string]interface{})

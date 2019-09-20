@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tamanyan/oauth2-server/oauth2"
-	"github.com/tamanyan/oauth2-server/models"
-	"github.com/tamanyan/oauth2-server/store"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/tamanyan/oauth2-server/models"
+	"github.com/tamanyan/oauth2-server/oauth2"
+	"github.com/tamanyan/oauth2-server/store"
 )
 
 func TestTokenStore(t *testing.T) {

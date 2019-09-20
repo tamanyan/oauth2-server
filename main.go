@@ -2,26 +2,22 @@ package main
 
 import (
 	"log"
-	"net/http"
-	// "fmt"
+	"os"
 
-	// goerrors "github.com/pkg/errors"
-	"github.com/tamanyan/oauth2-server/oauth2"
+	"github.com/dgrijalva/jwt-go"
+	_ "github.com/joho/godotenv/autoload"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/tamanyan/oauth2-server/errors"
+	"github.com/tamanyan/oauth2-server/generates"
 	"github.com/tamanyan/oauth2-server/manage"
 	"github.com/tamanyan/oauth2-server/models"
+	"github.com/tamanyan/oauth2-server/oauth2"
 	"github.com/tamanyan/oauth2-server/server"
 	"github.com/tamanyan/oauth2-server/store"
-	"github.com/tamanyan/oauth2-server/generates"
-	"github.com/dgrijalva/jwt-go"
-	// "golang.org/x/oauth2/clientcredentials"
 )
 
-const (
-	authServerURL = "http://localhost:9096"
-)
-
-func main() {
+func newOAuth2Server() *server.Server {
 	manager := manage.NewDefaultManager()
 	// token memory store
 	manager.MustTokenStorage(store.NewFileTokenStore("./tmp/storage/token.db"))
@@ -38,9 +34,11 @@ func main() {
 		Domain: "http://localhost",
 	})
 	manager.MapClientStorage(clientStore)
+	return server.NewDefaultServer(manager)
+}
 
-	srv := server.NewDefaultServer(manager)
-	srv.SetAllowGetAccessRequest(true)
+func setupOAuth2ServerConfigcation(srv *server.Server) {
+	srv.SetAllowGetAccessRequest(false)
 	srv.SetClientInfoHandler(server.ClientFormHandler)
 
 	srv.SetClientAuthorizedHandler(func(clientID string, grant oauth2.GrantType) (allowed bool, err error) {
@@ -67,16 +65,32 @@ func main() {
 		err = errors.ErrInvalidGrant
 		return
 	})
+}
 
-	http.HandleFunc("/oauth/token", func(w http.ResponseWriter, r *http.Request) {
-		err := srv.HandleTokenRequest(w, r)
-		if err != nil {
-			log.Println("/oauth2/token err", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+func main() {
+	srv := newOAuth2Server()
+	setupOAuth2ServerConfigcation(srv)
+
+	e := echo.New()
+	e.Use(middleware.Recover())
+	e.POST("/oauth2/token", func(c echo.Context) error {
+		err := srv.HandleTokenRequest(c)
+		return err
 	})
 
-	log.Println("Ready on http://localhost:9096")
+	if os.Getenv("DEBUG") == "1" {
+		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+			Format: "method=${method}, uri=${uri}, status=${status} latency=${latency_human}\n",
+		}))
+	} else {
+		e.Use(middleware.Logger())
+	}
 
-	log.Fatal(http.ListenAndServe(":9096", nil))
+	var port = "9096"
+
+	if len(os.Getenv("PORT")) > 0 {
+		port = os.Getenv("PORT")
+	}
+
+	e.Logger.Fatal(e.Start(":" + port))
 }

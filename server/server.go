@@ -1,15 +1,14 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
-	// "time"
 
-	"github.com/tamanyan/oauth2-server/oauth2"
+	"github.com/labstack/echo"
 	"github.com/tamanyan/oauth2-server/errors"
+	"github.com/tamanyan/oauth2-server/oauth2"
 )
 
 // NewDefaultServer create a default authorization server
@@ -27,7 +26,7 @@ func NewServer(cfg *Config, manager oauth2.Manager) *Server {
 	// default handler
 	srv.ClientInfoHandler = ClientBasicHandler
 
-	srv.UserAuthorizationHandler = func(w http.ResponseWriter, r *http.Request) (userID string, err error) {
+	srv.UserAuthorizationHandler = func(c echo.Context) (userID string, err error) {
 		err = errors.ErrAccessDenied
 		return
 	}
@@ -56,51 +55,50 @@ type Server struct {
 	AuthorizeScopeHandler        AuthorizeScopeHandler
 }
 
-func (s *Server) redirectError(w http.ResponseWriter, req *AuthorizeRequest, err error) (uerr error) {
+func (s *Server) redirectError(c echo.Context, req *AuthorizeRequest, err error) (uerr error) {
 	if req == nil {
 		uerr = err
 		return
 	}
-	data, _, _ := s.GetErrorData(err)
-	err = s.redirect(w, req, data)
+	data, _, _ := GetErrorData(s, err)
+	err = s.redirect(c, req, data)
 	return
 }
 
-func (s *Server) redirect(w http.ResponseWriter, req *AuthorizeRequest, data map[string]interface{}) (err error) {
+func (s *Server) redirect(c echo.Context, req *AuthorizeRequest, data map[string]interface{}) (err error) {
 	uri, err := s.GetRedirectURI(req, data)
 	if err != nil {
 		return
 	}
-	w.Header().Set("Location", uri)
-	w.WriteHeader(302)
+	c.Redirect(302, uri)
 	return
 }
 
-func (s *Server) tokenError(w http.ResponseWriter, err error) (uerr error) {
-	data, statusCode, header := s.GetErrorData(err)
+// func (s *Server) tokenError(w http.ResponseWriter, err error) (uerr error) {
+// 	data, statusCode, header := s.GetErrorData(err)
 
-	uerr = s.token(w, data, header, statusCode)
-	return
-}
+// 	uerr = s.token(w, data, header, statusCode)
+// 	return
+// }
 
-func (s *Server) token(w http.ResponseWriter, data map[string]interface{}, header http.Header, statusCode ...int) (err error) {
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("Pragma", "no-cache")
+// func (s *Server) token(w http.ResponseWriter, data map[string]interface{}, header http.Header, statusCode ...int) (err error) {
+// 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+// 	w.Header().Set("Cache-Control", "no-store")
+// 	w.Header().Set("Pragma", "no-cache")
 
-	for key := range header {
-		w.Header().Set(key, header.Get(key))
-	}
+// 	for key := range header {
+// 		w.Header().Set(key, header.Get(key))
+// 	}
 
-	status := http.StatusOK
-	if len(statusCode) > 0 && statusCode[0] > 0 {
-		status = statusCode[0]
-	}
+// 	status := http.StatusOK
+// 	if len(statusCode) > 0 && statusCode[0] > 0 {
+// 		status = statusCode[0]
+// 	}
 
-	w.WriteHeader(status)
-	err = json.NewEncoder(w).Encode(data)
-	return
-}
+// 	w.WriteHeader(status)
+// 	err = json.NewEncoder(w).Encode(data)
+// 	return
+// }
 
 // GetRedirectURI get redirect uri
 func (s *Server) GetRedirectURI(req *AuthorizeRequest, data map[string]interface{}) (uri string, err error) {
@@ -233,18 +231,18 @@ func (s *Server) GetAuthorizeData(rt oauth2.ResponseType, ti oauth2.TokenInfo) (
 }
 
 // HandleAuthorizeRequest the authorization request handling
-func (s *Server) HandleAuthorizeRequest(w http.ResponseWriter, r *http.Request) (err error) {
-	req, verr := s.ValidationAuthorizeRequest(r)
+func (s *Server) HandleAuthorizeRequest(c echo.Context) (err error) {
+	req, verr := s.ValidationAuthorizeRequest(c.Request())
 	if verr != nil {
-		err = s.redirectError(w, req, verr)
+		err = s.redirectError(c, req, verr)
 		return
 	}
 
 	// user authorization
-	userID, verr := s.UserAuthorizationHandler(w, r)
+	userID, verr := s.UserAuthorizationHandler(c)
 
 	if verr != nil {
-		err = s.redirectError(w, req, verr)
+		err = s.redirectError(c, req, verr)
 		return
 	} else if userID == "" {
 		return
@@ -255,7 +253,7 @@ func (s *Server) HandleAuthorizeRequest(w http.ResponseWriter, r *http.Request) 
 	// specify the scope of authorization
 	if fn := s.AuthorizeScopeHandler; fn != nil {
 
-		scope, verr := fn(w, r)
+		scope, verr := fn(c)
 		if verr != nil {
 			err = verr
 			return
@@ -267,7 +265,7 @@ func (s *Server) HandleAuthorizeRequest(w http.ResponseWriter, r *http.Request) 
 	// specify the expiration time of access token
 	if fn := s.AccessTokenExpHandler; fn != nil {
 
-		exp, verr := fn(w, r)
+		exp, verr := fn(c)
 		if verr != nil {
 			err = verr
 			return
@@ -277,7 +275,7 @@ func (s *Server) HandleAuthorizeRequest(w http.ResponseWriter, r *http.Request) 
 
 	ti, verr := s.GetAuthorizeToken(req)
 	if verr != nil {
-		err = s.redirectError(w, req, verr)
+		err = s.redirectError(c, req, verr)
 		return
 	}
 
@@ -291,7 +289,7 @@ func (s *Server) HandleAuthorizeRequest(w http.ResponseWriter, r *http.Request) 
 		req.RedirectURI = client.GetDomain()
 	}
 
-	err = s.redirect(w, req, s.GetAuthorizeData(req.ResponseType, ti))
+	err = s.redirect(c, req, s.GetAuthorizeData(req.ResponseType, ti))
 	return
 }
 
@@ -486,26 +484,86 @@ func (s *Server) GetTokenData(ti oauth2.TokenInfo) (data map[string]interface{})
 	return
 }
 
+// // HandleTokenRequest token request handling
+// func (s *Server) HandleTokenRequest(w http.ResponseWriter, r *http.Request) (err error) {
+// 	gt, tgr, verr := s.ValidationTokenRequest(r)
+// 	if verr != nil {
+// 		err = s.tokenError(w, verr)
+// 		return
+// 	}
+
+// 	ti, verr := s.GetAccessToken(gt, tgr)
+// 	if verr != nil {
+// 		err = s.tokenError(w, verr)
+// 		return
+// 	}
+
+// 	err = s.token(w, s.GetTokenData(ti), nil)
+// 	return
+// }
+
 // HandleTokenRequest token request handling
-func (s *Server) HandleTokenRequest(w http.ResponseWriter, r *http.Request) (err error) {
-	gt, tgr, verr := s.ValidationTokenRequest(r)
+func (s *Server) HandleTokenRequest(c echo.Context) (err error) {
+	gt, tgr, verr := s.ValidationTokenRequest(c.Request())
 	if verr != nil {
-		err = s.tokenError(w, verr)
+		err = JSONTokenError(s, c, verr)
 		return
 	}
 
 	ti, verr := s.GetAccessToken(gt, tgr)
 	if verr != nil {
-		err = s.tokenError(w, verr)
+		err = JSONTokenError(s, c, verr)
 		return
 	}
 
-	err = s.token(w, s.GetTokenData(ti), nil)
+	token := s.GetTokenData(ti)
+	err = c.JSON(http.StatusOK, token)
 	return
 }
 
+// BearerAuth parse bearer token
+func (s *Server) BearerAuth(r *http.Request) (accessToken string, ok bool) {
+	auth := r.Header.Get("Authorization")
+	prefix := "Bearer "
+
+	if auth != "" && strings.HasPrefix(auth, prefix) {
+		accessToken = auth[len(prefix):]
+	} else {
+		accessToken = r.FormValue("access_token")
+	}
+
+	if accessToken != "" {
+		ok = true
+	}
+
+	return
+}
+
+// ValidationBearerToken validation the bearer tokens
+// https://tools.ietf.org/html/rfc6750
+func (s *Server) ValidationBearerToken(r *http.Request) (ti oauth2.TokenInfo, err error) {
+	accessToken, ok := s.BearerAuth(r)
+	if !ok {
+		err = errors.ErrInvalidAccessToken
+		return
+	}
+
+	ti, err = s.Manager.LoadAccessToken(accessToken)
+
+	return
+}
+
+// JSONTokenError send error response
+func JSONTokenError(s *Server, c echo.Context, err error) error {
+	data, statusCode, header := GetErrorData(s, err)
+	for key := range header {
+		c.Response().Header().Set(key, header.Get(key))
+	}
+	return c.JSON(statusCode, data)
+}
+
 // GetErrorData get error response data
-func (s *Server) GetErrorData(err error) (data map[string]interface{}, statusCode int, header http.Header) {
+func GetErrorData(s *Server, err error) (data map[string]interface{}, statusCode int, header http.Header) {
 	re := new(errors.Response)
 
 	if v, ok := errors.Descriptions[err]; ok {
@@ -558,38 +616,6 @@ func (s *Server) GetErrorData(err error) (data map[string]interface{}, statusCod
 	if v := re.StatusCode; v > 0 {
 		statusCode = v
 	}
-
-	return
-}
-
-// BearerAuth parse bearer token
-func (s *Server) BearerAuth(r *http.Request) (accessToken string, ok bool) {
-	auth := r.Header.Get("Authorization")
-	prefix := "Bearer "
-
-	if auth != "" && strings.HasPrefix(auth, prefix) {
-		accessToken = auth[len(prefix):]
-	} else {
-		accessToken = r.FormValue("access_token")
-	}
-
-	if accessToken != "" {
-		ok = true
-	}
-
-	return
-}
-
-// ValidationBearerToken validation the bearer tokens
-// https://tools.ietf.org/html/rfc6750
-func (s *Server) ValidationBearerToken(r *http.Request) (ti oauth2.TokenInfo, err error) {
-	accessToken, ok := s.BearerAuth(r)
-	if !ok {
-		err = errors.ErrInvalidAccessToken
-		return
-	}
-
-	ti, err = s.Manager.LoadAccessToken(accessToken)
 
 	return
 }

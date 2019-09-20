@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/tidwall/buntdb"
-	"github.com/tamanyan/oauth2-server/oauth2"
 	"github.com/tamanyan/oauth2-server/models"
+	"github.com/tamanyan/oauth2-server/oauth2"
 	"github.com/tamanyan/oauth2-server/utils/uuid"
+	"github.com/tidwall/buntdb"
 )
 
 // NewMemoryTokenStore create a token store instance based on memory
