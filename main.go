@@ -6,12 +6,12 @@ import (
 	"fmt"
 
 	goerrors "github.com/pkg/errors"
-	"gopkg.in/oauth2.v3"
-	"gopkg.in/oauth2.v3/errors"
-	"gopkg.in/oauth2.v3/manage"
-	"gopkg.in/oauth2.v3/models"
-	"gopkg.in/oauth2.v3/server"
-	"gopkg.in/oauth2.v3/store"
+	"github.com/tamanyan/oauth2-server/oauth2"
+	"github.com/tamanyan/oauth2-server/errors"
+	"github.com/tamanyan/oauth2-server/manage"
+	"github.com/tamanyan/oauth2-server/models"
+	"github.com/tamanyan/oauth2-server/server"
+	"github.com/tamanyan/oauth2-server/store"
 	// "golang.org/x/oauth2/clientcredentials"
 )
 
