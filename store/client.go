@@ -1,41 +1,68 @@
 package store
 
 import (
-	"errors"
-	"sync"
+	// "errors"
+	// "sync"
+	"encoding/json"
+	// "fmt"
+	"log"
 
+	"github.com/tidwall/buntdb"
+	"github.com/tamanyan/oauth2-server/models"
 	"github.com/tamanyan/oauth2-server/oauth2"
 )
 
 // NewClientStore create client store
-func NewClientStore() *ClientStore {
-	return &ClientStore{
-		data: make(map[string]oauth2.ClientInfo),
+func NewClientStore(filename string) (client *ClientStore, err error) {
+	db, err := buntdb.Open(filename)
+	if err != nil {
+		return
 	}
+	client = &ClientStore{
+		db: db,
+	}
+	return
 }
 
 // ClientStore client information store
 type ClientStore struct {
-	sync.RWMutex
-	data map[string]oauth2.ClientInfo
+	db *buntdb.DB
 }
 
 // GetByID according to the ID for the client information
 func (cs *ClientStore) GetByID(id string) (cli oauth2.ClientInfo, err error) {
-	cs.RLock()
-	defer cs.RUnlock()
-	if c, ok := cs.data[id]; ok {
-		cli = c
+	verr := cs.db.View(func(tx *buntdb.Tx) (err error) {
+		jv, err := tx.Get(id)
+		log.Println(err)
+		if err != nil {
+			return
+		}
+		var cm models.Client
+		err = json.Unmarshal([]byte(jv), &cm)
+		if err != nil {
+			return
+		}
+		cli = &cm
 		return
+	})
+	if verr != nil {
+		if verr == buntdb.ErrNotFound {
+			return
+		}
+		err = verr
 	}
-	err = errors.New("not found")
 	return
 }
 
 // Set set client information
 func (cs *ClientStore) Set(id string, cli oauth2.ClientInfo) (err error) {
-	cs.Lock()
-	defer cs.Unlock()
-	cs.data[id] = cli
+	jv, err := json.Marshal(cli)
+	if err != nil {
+		return
+	}
+	err = cs.db.Update(func(tx *buntdb.Tx) error {
+		_, _, err := tx.Set(id, string(jv), nil)
+		return err
+	})
 	return
 }

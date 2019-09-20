@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
-	"fmt"
+	// "fmt"
 
-	goerrors "github.com/pkg/errors"
+	// goerrors "github.com/pkg/errors"
 	"github.com/tamanyan/oauth2-server/oauth2"
 	"github.com/tamanyan/oauth2-server/errors"
 	"github.com/tamanyan/oauth2-server/manage"
@@ -25,7 +25,10 @@ func main() {
 	manager.MustTokenStorage(store.NewFileTokenStore("./tmp/storage/token.db"))
 
 	// client memory store
-	clientStore := store.NewClientStore()
+	clientStore, err := store.NewClientStore("./tmp/storage/client.db")
+	if err != nil {
+		log.Fatal(err)
+	}
 	clientStore.Set("000000", &models.Client{
 		ID:     "000000",
 		Secret: "999999",
@@ -45,11 +48,11 @@ func main() {
 
 	srv.SetInternalErrorHandler(func(err error) (re *errors.Response) {
 		log.Println("Internal Error:", err.Error())
-		gerr := goerrors.New("error")
-		gerr = goerrors.Wrap(err, "open failed")
-		gerr = goerrors.Wrap(err, "read config failed")
+		// gerr := goerrors.New("error")
+		// gerr = goerrors.Wrap(err, "open failed")
+		// gerr = goerrors.Wrap(err, "read config failed")
 
-		fmt.Printf("%+v\n", gerr)
+		// fmt.Printf("%+v\n", gerr)
 		return
 	})
 
@@ -68,7 +71,9 @@ func main() {
 		log.Println(username, password)
 		if username == "test" && password == "test" {
 			userID = "test"
+			return
 		}
+		err = errors.ErrInvalidGrant
 		return
 	})
 
