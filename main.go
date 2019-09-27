@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/dgrijalva/jwt-go"
@@ -11,6 +10,7 @@ import (
 	"github.com/labstack/echo/middleware"
 	"github.com/tamanyan/oauth2-server/errors"
 	"github.com/tamanyan/oauth2-server/generates"
+	"github.com/tamanyan/oauth2-server/http"
 	"github.com/tamanyan/oauth2-server/manage"
 	"github.com/tamanyan/oauth2-server/models"
 	"github.com/tamanyan/oauth2-server/oauth2"
@@ -26,7 +26,7 @@ func newManager() oauth2.Manager {
 	manager := manage.NewDefaultManager()
 	// token memory store
 	manager.MustTokenStorage(store.NewFileTokenStore("./tmp/storage/token.db"))
-	manager.MapAccessGenerate(generates.NewJWTAccessGenerate([]byte(secretKey), jwt.SigningMethodHS512))
+	manager.MapAccessGenerate(generates.NewJWTAccessGenerate([]byte(os.Getenv("JWT_SECRET_KEY")), jwt.SigningMethodHS512))
 
 	// client memory store
 	clientStore, err := store.NewClientStore("./tmp/storage/client.db")
@@ -80,37 +80,23 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Recover())
 	e.Use(middleware.BodyLimit("1M"))
-	e.Use(middleware.CORS())
+	// e.Use(middleware.CORS())
 	e.Use(middleware.Gzip())
 	e.Use(middleware.RequestID())
-	e.POST("/oauth2/token", func(c echo.Context) error {
-		err := srv.HandleTokenRequest(c)
-		return err
-	})
 
-	r := e.Group("/oauth2")
-	r.Use(middleware.JWTWithConfig(middleware.JWTConfig{
-		SigningKey:    []byte(secretKey),
-		SigningMethod: "HS512",
-	}))
-	r.DELETE("/token", func(c echo.Context) error {
-		user := c.Get("user").(*jwt.Token)
-		err := manager.RemoveAccessToken(user.Raw)
-
-		log.Println(user.Raw)
-		if err != nil {
-			return c.NoContent(http.StatusInternalServerError)
-		}
-
-		return c.NoContent(http.StatusOK)
-	})
+	http.NewOAuth2TokenHandler(e, srv, manager)
 
 	if os.Getenv("DEBUG") == "1" {
 		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 			Format: "method=${method}, uri=${uri}, status=${status} latency=${latency_human}\n",
 		}))
 	} else {
-		e.Use(middleware.Logger())
+		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+			Format: `{"time":"${time_rfc3339_nano}","id":"${id}","remote_ip":"${remote_ip}","host":"${host}",` +
+				`"method":"${method}","uri":"${uri}","user_agent":"${user_agent}",status":${status},"error":"${error}",` +
+				`"latency":${latency},"latency_human":"${latency_human}","bytes_in":${bytes_in},` +
+				`"bytes_out":${bytes_out}}` + "\n",
+		}))
 	}
 
 	var port = "9096"
