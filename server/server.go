@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo"
 	"github.com/tamanyan/oauth2-server/errors"
@@ -461,7 +462,7 @@ func (s *Server) GetTokenData(ti oauth2.TokenInfo) (data map[string]interface{})
 	data = map[string]interface{}{
 		"access_token": ti.GetAccess(),
 		"token_type":   s.Config.TokenType,
-		"expired_at":   int64(ti.GetAccessCreateAt().Add(ti.GetAccessExpiresIn()).Unix()),
+		"expires_in":   int64(ti.GetAccessExpiresIn() / time.Second),
 	}
 
 	if scope := ti.GetScope(); scope != "" {
@@ -541,6 +542,27 @@ func (s *Server) BearerAuth(r *http.Request) (accessToken string, ok bool) {
 
 // ValidationBearerToken validation the bearer tokens
 // https://tools.ietf.org/html/rfc6750
+func (s *Server) ValidateBearerToken(c echo.Context) (ti oauth2.TokenInfo, err error) {
+	accessToken, ok := s.BearerAuth(c.Request())
+	if !ok {
+		err = JSONTokenError(s, c, errors.ErrInvalidAccessToken)
+		return
+	}
+
+	tokenInfo, verr := s.Manager.LoadAccessToken(accessToken)
+
+	if verr != nil {
+		err = JSONTokenError(s, c, verr)
+		return
+	}
+
+	ti = tokenInfo
+
+	return
+}
+
+// ValidationBearerToken validation the bearer tokens
+// https://tools.ietf.org/html/rfc6750
 func (s *Server) ValidationBearerToken(r *http.Request) (ti oauth2.TokenInfo, err error) {
 	accessToken, ok := s.BearerAuth(r)
 	if !ok {
@@ -559,7 +581,8 @@ func JSONTokenError(s *Server, c echo.Context, err error) error {
 	for key := range header {
 		c.Response().Header().Set(key, header.Get(key))
 	}
-	return c.JSON(statusCode, data)
+	c.JSON(statusCode, data)
+	return err
 }
 
 // GetErrorData get error response data

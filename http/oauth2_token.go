@@ -1,9 +1,9 @@
 package http
 
 import (
-	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
@@ -35,11 +35,23 @@ func NewOAuth2TokenHandler(e *echo.Echo, srv *server.Server, manager oauth2.Mana
 		user := c.Get("user").(*jwt.Token)
 		err := manager.RemoveAccessToken(user.Raw)
 
-		log.Println(user.Raw)
 		if err != nil {
 			return c.NoContent(http.StatusInternalServerError)
 		}
 
 		return c.NoContent(http.StatusOK)
+	})
+	r.GET("/verify", func(c echo.Context) error {
+		ti, err := srv.ValidateBearerToken(c)
+
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(http.StatusOK, echo.Map{
+			"scope":      ti.GetScope(),
+			"client_id":  ti.GetClientID(),
+			"expires_in": int64(ti.GetAccessExpiresIn() / time.Second),
+		})
 	})
 }

@@ -58,6 +58,10 @@ var Descriptions = map[error]string{
 	ErrInvalidClient:           "Client authentication failed",
 	ErrInvalidGrant:            "The provided authorization grant (e.g., authorization code, resource owner credentials) or refresh token is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client",
 	ErrUnsupportedGrantType:    "The authorization grant type is not supported by the authorization server",
+	ErrInvalidAccessToken:      "The token is invalid.",
+	ErrExpiredAccessToken:      "The token is already expired.",
+	ErrInvalidRefreshToken:     "The refresh token is invalid.",
+	ErrExpiredRefreshToken:     "The refresh token is already expired.",
 }
 
 // StatusCodes response error HTTP status code
@@ -72,4 +76,8 @@ var StatusCodes = map[error]int{
 	ErrInvalidClient:           401,
 	ErrInvalidGrant:            401,
 	ErrUnsupportedGrantType:    401,
+	ErrInvalidAccessToken:      401,
+	ErrExpiredAccessToken:      401,
+	ErrInvalidRefreshToken:     401,
+	ErrExpiredRefreshToken:     401,
 }
