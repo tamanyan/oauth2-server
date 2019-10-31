@@ -3,12 +3,15 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 
+	_oauth2Controller "github.com/tamanyan/oauth2-server/app/oauth2/http/controller"
+	_oauth2Usecase "github.com/tamanyan/oauth2-server/app/oauth2/usecase"
 	"github.com/tamanyan/oauth2-server/errors"
 	"github.com/tamanyan/oauth2-server/generates"
 	"github.com/tamanyan/oauth2-server/manage"
@@ -16,8 +19,6 @@ import (
 	"github.com/tamanyan/oauth2-server/oauth2"
 	"github.com/tamanyan/oauth2-server/server"
 	"github.com/tamanyan/oauth2-server/store"
-
-	_oauth2Controller "github.com/tamanyan/oauth2-server/app/oauth2/http/controller"
 )
 
 var (
@@ -86,7 +87,9 @@ func main() {
 	e.Use(middleware.Gzip())
 	e.Use(middleware.RequestID())
 
-	_oauth2Controller.NewOAuth2Handler(e, srv, manager)
+	timeoutContext := time.Duration(1000 * time.Second)
+	au := _oauth2Usecase.NewOAuth2Usecase(timeoutContext)
+	_oauth2Controller.NewOAuth2Handler(e, srv, manager, au)
 
 	if os.Getenv("DEBUG") == "1" {
 		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
