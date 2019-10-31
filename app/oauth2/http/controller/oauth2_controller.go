@@ -1,6 +1,7 @@
-package http
+package controller
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -8,12 +9,15 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"gopkg.in/go-playground/validator.v9"
+
+	form "github.com/tamanyan/oauth2-server/app/oauth2/http/form"
 	"github.com/tamanyan/oauth2-server/oauth2"
 	"github.com/tamanyan/oauth2-server/server"
 )
 
-// NewOAuth2TokenHandler will initialize the articles/ resources endpoint
-func NewOAuth2TokenHandler(e *echo.Echo, srv *server.Server, manager oauth2.Manager) {
+// NewOAuth2Handler will initialize the articles/ resources endpoint
+func NewOAuth2Handler(e *echo.Echo, srv *server.Server, manager oauth2.Manager) {
 	// handler := &ArticleHandler{
 	// 	AUsecase: us,
 	// }
@@ -22,7 +26,23 @@ func NewOAuth2TokenHandler(e *echo.Echo, srv *server.Server, manager oauth2.Mana
 	// e.GET("/articles/:id", handler.GetByID)
 	// e.DELETE("/articles/:id", handler.Delete)
 	e.POST("/oauth2/token", func(c echo.Context) error {
-		err := srv.HandleTokenRequest(c)
+		form := form.OAuth2TokenForm{}
+
+		if err := c.Bind(&form); err != nil {
+			log.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		validate := validator.New()
+		err := validate.Struct(form)
+
+		if err != nil {
+			log.Println(err)
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		err = srv.HandleTokenRequest(c)
+
 		return err
 	})
 

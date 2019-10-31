@@ -8,14 +8,16 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+
 	"github.com/tamanyan/oauth2-server/errors"
 	"github.com/tamanyan/oauth2-server/generates"
-	"github.com/tamanyan/oauth2-server/http"
 	"github.com/tamanyan/oauth2-server/manage"
 	"github.com/tamanyan/oauth2-server/models"
 	"github.com/tamanyan/oauth2-server/oauth2"
 	"github.com/tamanyan/oauth2-server/server"
 	"github.com/tamanyan/oauth2-server/store"
+
+	_oauth2Controller "github.com/tamanyan/oauth2-server/app/oauth2/http/controller"
 )
 
 var (
@@ -84,7 +86,7 @@ func main() {
 	e.Use(middleware.Gzip())
 	e.Use(middleware.RequestID())
 
-	http.NewOAuth2TokenHandler(e, srv, manager)
+	_oauth2Controller.NewOAuth2Handler(e, srv, manager)
 
 	if os.Getenv("DEBUG") == "1" {
 		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
