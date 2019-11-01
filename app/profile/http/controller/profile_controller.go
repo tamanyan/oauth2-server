@@ -8,12 +8,12 @@ import (
 	"github.com/tamanyan/oauth2-server/app/profile"
 )
 
-// ProfileHandler  represent the httphandler for profile
+// ProfileHandler represent the httphandler for profile
 type ProfileHandler struct {
 	ProfileUsecase profile.Usecase
 }
 
-// NewProfileHandler will initialize the /profile"/ resources endpoint
+// NewProfileHandler will initialize the profile resources endpoint
 func NewProfileHandler(e *echo.Echo, middleware *middleware.GoMiddleware, us profile.Usecase) {
 	handler := &ProfileHandler{
 		ProfileUsecase: us,

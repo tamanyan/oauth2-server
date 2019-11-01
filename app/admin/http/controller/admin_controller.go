@@ -8,12 +8,12 @@ import (
 	"github.com/tamanyan/oauth2-server/app/admin"
 )
 
-// AdminHandler  represent the httphandler for admin
+// AdminHandler represent the httphandler for admin
 type AdminHandler struct {
 	AdminUsecase admin.Usecase
 }
 
-// NewAdminHandler will initialize the /admin"/ resources endpoint
+// NewAdminHandler will initialize the admin resources endpoint
 func NewAdminHandler(e *echo.Echo, middleware *middleware.GoMiddleware, us admin.Usecase) {
 	handler := &AdminHandler{
 		AdminUsecase: us,
