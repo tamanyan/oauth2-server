@@ -16,6 +16,9 @@ import (
 	_profileController "github.com/tamanyan/oauth2-server/app/profile/http/controller"
 	_profileRepository "github.com/tamanyan/oauth2-server/app/profile/repository"
 	_profileUsecase "github.com/tamanyan/oauth2-server/app/profile/usecase"
+	_adminController "github.com/tamanyan/oauth2-server/app/admin/http/controller"
+	_adminRepository "github.com/tamanyan/oauth2-server/app/admin/repository"
+	_adminUsecase "github.com/tamanyan/oauth2-server/app/admin/usecase"
 	"github.com/tamanyan/oauth2-server/errors"
 	"github.com/tamanyan/oauth2-server/generates"
 	"github.com/tamanyan/oauth2-server/manage"
@@ -97,6 +100,10 @@ func main() {
 	pr := _profileRepository.NewProfileRepository()
 	pu := _profileUsecase.NewProfileUsecase(pr)
 	_profileController.NewProfileHandler(e, goMiddleware, pu)
+
+	adr := _adminRepository.NewAdminRepository()
+	adu := _adminUsecase.NewAdminUsecase(adr)
+	_adminController.NewAdminHandler(e, goMiddleware, adu)
 
 	if os.Getenv("DEBUG") == "1" {
 		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{

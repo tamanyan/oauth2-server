@@ -1,6 +1,6 @@
-package article
+package admin
 
-// Repository represent the article's repository
+// Repository represent the admin's repository
 type Repository interface {
 	GetByID(id string) (data interface{}, err error)
 }
