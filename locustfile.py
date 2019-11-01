@@ -27,4 +27,3 @@ class WebsiteUser(HttpLocust):
 
     min_wait = 10000
     max_wait = 10000
-

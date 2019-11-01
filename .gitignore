@@ -21,3 +21,5 @@ tmp/storage
 
 .mypy_cache/
 __pycache__/
+
+goose

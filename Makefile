@@ -25,4 +25,9 @@ lint:
 		--enable=unconvert \
 		./...
 
+gen-template:
+ifdef MODULE
+	./goose-osx --verbose -outputdir app/${MODULE} -templatedir ./.template/ -data 'name=${MODULE}'  .  ${MODULE}
+endif
+
 .PHONY: clean install unittest build docker run stop vendor lint-prepare lint

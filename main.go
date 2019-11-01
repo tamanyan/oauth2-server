@@ -13,6 +13,9 @@ import (
 	_middleware "github.com/tamanyan/oauth2-server/app/middleware"
 	_oauth2Controller "github.com/tamanyan/oauth2-server/app/oauth2/http/controller"
 	_oauth2Usecase "github.com/tamanyan/oauth2-server/app/oauth2/usecase"
+	_profileController "github.com/tamanyan/oauth2-server/app/profile/http/controller"
+	_profileRepository "github.com/tamanyan/oauth2-server/app/profile/repository"
+	_profileUsecase "github.com/tamanyan/oauth2-server/app/profile/usecase"
 	"github.com/tamanyan/oauth2-server/errors"
 	"github.com/tamanyan/oauth2-server/generates"
 	"github.com/tamanyan/oauth2-server/manage"
@@ -77,10 +80,6 @@ func setupOAuth2ServerConfigcation(srv *server.Server) {
 }
 
 func main() {
-	manager := newManager()
-	srv := server.NewDefaultServer(manager)
-	setupOAuth2ServerConfigcation(srv)
-
 	e := echo.New()
 	e.Use(middleware.Recover())
 	e.Use(middleware.BodyLimit("1M"))
@@ -88,10 +87,16 @@ func main() {
 	e.Use(middleware.Gzip())
 	e.Use(middleware.RequestID())
 
+	manager := newManager()
 	goMiddleware := _middleware.InitMiddleware()
 	timeoutContext := time.Duration(1000 * time.Second)
+
 	au := _oauth2Usecase.NewOAuth2Usecase(manager, timeoutContext)
 	_oauth2Controller.NewOAuth2Handler(e, goMiddleware, manager, au)
+
+	pr := _profileRepository.NewProfileRepository()
+	pu := _profileUsecase.NewProfileUsecase(pr)
+	_profileController.NewProfileHandler(e, goMiddleware, pu)
 
 	if os.Getenv("DEBUG") == "1" {
 		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
