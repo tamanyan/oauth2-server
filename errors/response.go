@@ -34,6 +34,7 @@ func (r *Response) SetHeader(key, value string) {
 
 // https://tools.ietf.org/html/rfc6749#section-5.2
 var (
+	ErrUnauthorized            = errors.New("unauthorized")
 	ErrInvalidRequest          = errors.New("invalid_request")
 	ErrUnauthorizedClient      = errors.New("unauthorized_client")
 	ErrAccessDenied            = errors.New("access_denied")
@@ -48,6 +49,7 @@ var (
 
 // Descriptions error description
 var Descriptions = map[error]string{
+	ErrUnauthorized:            "The request is not authorized",
 	ErrInvalidRequest:          "The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed",
 	ErrUnauthorizedClient:      "The client is not authorized to request an authorization code using this method",
 	ErrAccessDenied:            "The resource owner or authorization server denied the request",
@@ -66,6 +68,7 @@ var Descriptions = map[error]string{
 
 // StatusCodes response error HTTP status code
 var StatusCodes = map[error]int{
+	ErrUnauthorized:            401,
 	ErrInvalidRequest:          400,
 	ErrUnauthorizedClient:      401,
 	ErrAccessDenied:            403,

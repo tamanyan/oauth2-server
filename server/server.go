@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
+
 	"github.com/tamanyan/oauth2-server/errors"
 	"github.com/tamanyan/oauth2-server/oauth2"
 )
@@ -212,7 +213,6 @@ func (s *Server) GetAuthorizeToken(req *AuthorizeRequest) (ti oauth2.TokenInfo, 
 		RedirectURI:    req.RedirectURI,
 		Scope:          req.Scope,
 		AccessTokenExp: req.AccessTokenExp,
-		Request:        req.Request,
 	}
 
 	ti, err = s.Manager.GenerateAuthToken(req.ResponseType, tgr)
@@ -317,7 +317,6 @@ func (s *Server) ValidationTokenRequest(r *http.Request) (gt oauth2.GrantType, t
 	tgr = &oauth2.TokenGenerateRequest{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
-		Request:      r,
 	}
 
 	switch gt {

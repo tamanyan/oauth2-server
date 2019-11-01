@@ -3,10 +3,10 @@ package manage
 import (
 	"time"
 
-	"github.com/tamanyan/oauth2-server/oauth2"
 	"github.com/tamanyan/oauth2-server/errors"
 	"github.com/tamanyan/oauth2-server/generates"
 	"github.com/tamanyan/oauth2-server/models"
+	"github.com/tamanyan/oauth2-server/oauth2"
 )
 
 // NewDefaultManager create to default authorization management instance
@@ -163,7 +163,6 @@ func (m *Manager) GenerateAuthToken(rt oauth2.ResponseType, tgr *oauth2.TokenGen
 		UserID:    tgr.UserID,
 		CreateAt:  createAt,
 		TokenInfo: ti,
-		Request:   tgr.Request,
 	}
 	switch rt {
 	case oauth2.Code:
@@ -314,7 +313,6 @@ func (m *Manager) GenerateAccessToken(gt oauth2.GrantType, tgr *oauth2.TokenGene
 		UserID:    tgr.UserID,
 		CreateAt:  createAt,
 		TokenInfo: ti,
-		Request:   tgr.Request,
 	}
 
 	av, rv, terr := m.accessGenerate.Token(td, gcfg.IsGenerateRefresh)
@@ -362,7 +360,6 @@ func (m *Manager) RefreshAccessToken(tgr *oauth2.TokenGenerateRequest) (accessTo
 		UserID:    ti.GetUserID(),
 		CreateAt:  time.Now(),
 		TokenInfo: ti,
-		Request:   tgr.Request,
 	}
 
 	rcfg := DefaultRefreshTokenCfg

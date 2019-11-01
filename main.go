@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 
+	_middleware "github.com/tamanyan/oauth2-server/app/middleware"
 	_oauth2Controller "github.com/tamanyan/oauth2-server/app/oauth2/http/controller"
 	_oauth2Usecase "github.com/tamanyan/oauth2-server/app/oauth2/usecase"
 	"github.com/tamanyan/oauth2-server/errors"
@@ -87,9 +88,10 @@ func main() {
 	e.Use(middleware.Gzip())
 	e.Use(middleware.RequestID())
 
+	goMiddleware := _middleware.InitMiddleware()
 	timeoutContext := time.Duration(1000 * time.Second)
-	au := _oauth2Usecase.NewOAuth2Usecase(timeoutContext)
-	_oauth2Controller.NewOAuth2Handler(e, srv, manager, au)
+	au := _oauth2Usecase.NewOAuth2Usecase(manager, timeoutContext)
+	_oauth2Controller.NewOAuth2Handler(e, goMiddleware, manager, au)
 
 	if os.Getenv("DEBUG") == "1" {
 		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
