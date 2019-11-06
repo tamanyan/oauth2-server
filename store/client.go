@@ -7,9 +7,10 @@ import (
 	// "fmt"
 	// "log"
 
+	"github.com/tidwall/buntdb"
+
 	"github.com/tamanyan/oauth2-server/models"
 	"github.com/tamanyan/oauth2-server/oauth2"
-	"github.com/tidwall/buntdb"
 )
 
 // NewMemoryClientStore create a token store instance based on memory

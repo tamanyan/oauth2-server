@@ -10,15 +10,15 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 
+	_adminController "github.com/tamanyan/oauth2-server/app/admin/http/controller"
+	_adminRepository "github.com/tamanyan/oauth2-server/app/admin/repository"
+	_adminUsecase "github.com/tamanyan/oauth2-server/app/admin/usecase"
 	_middleware "github.com/tamanyan/oauth2-server/app/middleware"
 	_oauth2Controller "github.com/tamanyan/oauth2-server/app/oauth2/http/controller"
 	_oauth2Usecase "github.com/tamanyan/oauth2-server/app/oauth2/usecase"
 	_profileController "github.com/tamanyan/oauth2-server/app/profile/http/controller"
 	_profileRepository "github.com/tamanyan/oauth2-server/app/profile/repository"
 	_profileUsecase "github.com/tamanyan/oauth2-server/app/profile/usecase"
-	_adminController "github.com/tamanyan/oauth2-server/app/admin/http/controller"
-	_adminRepository "github.com/tamanyan/oauth2-server/app/admin/repository"
-	_adminUsecase "github.com/tamanyan/oauth2-server/app/admin/usecase"
 	"github.com/tamanyan/oauth2-server/errors"
 	"github.com/tamanyan/oauth2-server/generates"
 	"github.com/tamanyan/oauth2-server/manage"
@@ -35,7 +35,7 @@ var (
 func newManager() oauth2.Manager {
 	manager := manage.NewDefaultManager()
 	// token memory store
-	manager.MustTokenStorage(store.NewFileTokenStore("./tmp/storage/token.db"))
+	manager.MustTokenStorage(store.NewStore(store.NewConfig("./tmp/storage/token.db", "sqlite3", "token"), 600))
 	manager.MapAccessGenerate(generates.NewJWTAccessGenerate([]byte(os.Getenv("JWT_SECRET_KEY")), jwt.SigningMethodHS512))
 
 	// client memory store

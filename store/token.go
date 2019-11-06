@@ -2,165 +2,221 @@ package store
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
+	"os"
 	"time"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
+	// _ "github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
 	"github.com/tamanyan/oauth2-server/models"
 	"github.com/tamanyan/oauth2-server/oauth2"
-	"github.com/tamanyan/oauth2-server/utils/uuid"
-	"github.com/tidwall/buntdb"
 )
 
-// NewMemoryTokenStore create a token store instance based on memory
-func NewMemoryTokenStore() (store oauth2.TokenStore, err error) {
-	store, err = NewFileTokenStore(":memory:")
-	return
+var noUpdateContent = "No content found to be updated"
+
+// StoreItem data item
+type StoreItem struct {
+	gorm.Model
+	//ID        int64 `gorm:"AUTO_INCREMENT"`
+	ExpiredAt int64
+	Code      string `gorm:"type:varchar(512)"`
+	Access    string `gorm:"type:varchar(512)"`
+	Refresh   string `gorm:"type:varchar(512)"`
+	Data      string `gorm:"type:text"`
 }
 
-// NewFileTokenStore create a token store instance based on file
-func NewFileTokenStore(filename string) (store oauth2.TokenStore, err error) {
-	db, err := buntdb.Open(filename)
+// NewConfig create mysql configuration instance
+func NewConfig(dsn string, dbType string, tableName string) *Config {
+	return &Config{
+		DSN:         dsn,
+		DBType:      dbType,
+		TableName:   tableName,
+		MaxLifetime: time.Hour * 2,
+	}
+}
+
+// Config xorm configuration
+type Config struct {
+	DSN         string
+	DBType      string
+	TableName   string
+	MaxLifetime time.Duration
+}
+
+// NewStore create mysql store instance,
+func NewStore(config *Config, gcInterval int) (store oauth2.TokenStore, err error) {
+	db, err := gorm.Open(config.DBType, config.DSN)
 	if err != nil {
 		return
 	}
-	store = &TokenStore{db: db}
+	return NewStoreWithDB(config, db, gcInterval)
+}
+
+// NewStoreWithDB create store with config
+func NewStoreWithDB(config *Config, db *gorm.DB, gcInterval int) (store oauth2.TokenStore, err error) {
+	tokenStore := &Store{
+		db:        db,
+		tableName: "oauth2_token",
+		stdout:    os.Stderr,
+	}
+	if config.TableName != "" {
+		tokenStore.tableName = config.TableName
+	}
+	interval := 600
+	if gcInterval > 0 {
+		interval = gcInterval
+	}
+	tokenStore.ticker = time.NewTicker(time.Second * time.Duration(interval))
+
+	if !db.HasTable(tokenStore.tableName) {
+		if err := db.Table(tokenStore.tableName).CreateTable(&StoreItem{}).Error; err != nil {
+			panic(err)
+		}
+	}
+
+	go tokenStore.gc()
+	store = tokenStore
+
 	return
 }
 
-// TokenStore token storage based on buntdb(https://github.com/tidwall/buntdb)
-type TokenStore struct {
-	db *buntdb.DB
+// Store mysql token store
+type Store struct {
+	tableName string
+	db        *gorm.DB
+	stdout    io.Writer
+	ticker    *time.Ticker
+}
+
+// SetStdout set error output
+func (s *Store) SetStdout(stdout io.Writer) *Store {
+	s.stdout = stdout
+	return s
+}
+
+// Close close the store
+func (s *Store) Close() {
+	s.ticker.Stop()
+}
+
+func (s *Store) errorf(format string, args ...interface{}) {
+	if s.stdout != nil {
+		buf := fmt.Sprintf(format, args...)
+		s.stdout.Write([]byte(buf))
+	}
+}
+
+func (s *Store) gc() {
+	for range s.ticker.C {
+		now := time.Now().Unix()
+		var count int
+		if err := s.db.Table(s.tableName).Where("expired_at > ?", now).Count(&count).Error; err != nil {
+			s.errorf("[ERROR]:%s\n", err)
+			return
+		}
+		if count > 0 {
+			if err := s.db.Table(s.tableName).Where("expired_at > ?", now).Delete(&StoreItem{}).Error; err != nil {
+				s.errorf("[ERROR]:%s\n", err)
+			}
+		}
+	}
 }
 
 // Create create and store the new token information
-func (ts *TokenStore) Create(info oauth2.TokenInfo) (err error) {
-	ct := time.Now()
+func (s *Store) Create(info oauth2.TokenInfo) error {
 	jv, err := json.Marshal(info)
 	if err != nil {
-		return
+		return err
 	}
-	err = ts.db.Update(func(tx *buntdb.Tx) (err error) {
-		if code := info.GetCode(); code != "" {
-			_, _, err = tx.Set(code, string(jv), &buntdb.SetOptions{Expires: true, TTL: info.GetCodeExpiresIn()})
-			return
-		}
+	item := &StoreItem{
+		Data: string(jv),
+	}
 
-		basicID := uuid.Must(uuid.NewRandom()).String()
-		aexp := info.GetAccessExpiresIn()
-		rexp := aexp
+	if code := info.GetCode(); code != "" {
+		item.Code = code
+		item.ExpiredAt = info.GetCodeCreateAt().Add(info.GetCodeExpiresIn()).Unix()
+	} else {
+		item.Access = info.GetAccess()
+		item.ExpiredAt = info.GetAccessCreateAt().Add(info.GetAccessExpiresIn()).Unix()
+
 		if refresh := info.GetRefresh(); refresh != "" {
-			rexp = info.GetRefreshCreateAt().Add(info.GetRefreshExpiresIn()).Sub(ct)
-			if aexp.Seconds() > rexp.Seconds() {
-				aexp = rexp
-			}
-			_, _, err = tx.Set(refresh, basicID, &buntdb.SetOptions{Expires: true, TTL: rexp})
-			if err != nil {
-				return
-			}
+			item.Refresh = info.GetRefresh()
+			item.ExpiredAt = info.GetRefreshCreateAt().Add(info.GetRefreshExpiresIn()).Unix()
 		}
-		_, _, err = tx.Set(basicID, string(jv), &buntdb.SetOptions{Expires: true, TTL: rexp})
-		if err != nil {
-			return
-		}
-		_, _, err = tx.Set(info.GetAccess(), basicID, &buntdb.SetOptions{Expires: true, TTL: aexp})
-		return
-	})
-	return
-}
-
-// remove key
-func (ts *TokenStore) remove(key string) (err error) {
-	verr := ts.db.Update(func(tx *buntdb.Tx) (err error) {
-		_, err = tx.Delete(key)
-		return
-	})
-	if verr == buntdb.ErrNotFound {
-		return
 	}
-	err = verr
-	return
+
+	return s.db.Table(s.tableName).Create(item).Error
 }
 
-// RemoveByCode use the authorization code to delete the token information
-func (ts *TokenStore) RemoveByCode(code string) (err error) {
-	err = ts.remove(code)
-	return
+// RemoveByCode delete the authorization code
+func (s *Store) RemoveByCode(code string) error {
+	return s.db.Table(s.tableName).Where("code = ?", code).Update("code", "").Error
 }
 
 // RemoveByAccess use the access token to delete the token information
-func (ts *TokenStore) RemoveByAccess(access string) (err error) {
-	err = ts.remove(access)
-	return
+func (s *Store) RemoveByAccess(access string) error {
+	return s.db.Table(s.tableName).Where("access = ?", access).Update("access", "").Error
 }
 
 // RemoveByRefresh use the refresh token to delete the token information
-func (ts *TokenStore) RemoveByRefresh(refresh string) (err error) {
-	err = ts.remove(refresh)
-	return
+func (s *Store) RemoveByRefresh(refresh string) error {
+	return s.db.Table(s.tableName).Where("refresh = ?", refresh).Update("refresh", "").Error
 }
 
-func (ts *TokenStore) getData(key string) (ti oauth2.TokenInfo, err error) {
-	verr := ts.db.View(func(tx *buntdb.Tx) (err error) {
-		jv, err := tx.Get(key)
-		if err != nil {
-			return
-		}
-		var tm models.Token
-		err = json.Unmarshal([]byte(jv), &tm)
-		if err != nil {
-			return
-		}
-		ti = &tm
-		return
-	})
-	if verr != nil {
-		if verr == buntdb.ErrNotFound {
-			return
-		}
-		err = verr
-	}
-	return
-}
-
-func (ts *TokenStore) getBasicID(key string) (basicID string, err error) {
-	verr := ts.db.View(func(tx *buntdb.Tx) (err error) {
-		v, err := tx.Get(key)
-		if err != nil {
-			return
-		}
-		basicID = v
-		return
-	})
-	if verr != nil {
-		if verr == buntdb.ErrNotFound {
-			return
-		}
-		err = verr
-	}
-	return
+func (s *Store) toTokenInfo(data string) (oauth2.TokenInfo, error) {
+	var tm models.Token
+	err := json.Unmarshal([]byte(data), &tm)
+	return &tm, err
 }
 
 // GetByCode use the authorization code for token information data
-func (ts *TokenStore) GetByCode(code string) (ti oauth2.TokenInfo, err error) {
-	ti, err = ts.getData(code)
-	return
+func (s *Store) GetByCode(code string) (oauth2.TokenInfo, error) {
+	if code == "" {
+		return nil, nil
+	}
+
+	var item StoreItem
+	if err := s.db.Table(s.tableName).Where("code = ?", code).Find(&item).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return s.toTokenInfo(item.Data)
 }
 
 // GetByAccess use the access token for token information data
-func (ts *TokenStore) GetByAccess(access string) (ti oauth2.TokenInfo, err error) {
-	basicID, err := ts.getBasicID(access)
-	if err != nil {
-		return
+func (s *Store) GetByAccess(access string) (oauth2.TokenInfo, error) {
+	if access == "" {
+		return nil, nil
 	}
-	ti, err = ts.getData(basicID)
-	return
+
+	var item StoreItem
+	if err := s.db.Table(s.tableName).Where("access = ?", access).Find(&item).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return s.toTokenInfo(item.Data)
 }
 
 // GetByRefresh use the refresh token for token information data
-func (ts *TokenStore) GetByRefresh(refresh string) (ti oauth2.TokenInfo, err error) {
-	basicID, err := ts.getBasicID(refresh)
-	if err != nil {
-		return
+func (s *Store) GetByRefresh(refresh string) (oauth2.TokenInfo, error) {
+	if refresh == "" {
+		return nil, nil
 	}
-	ti, err = ts.getData(basicID)
-	return
+
+	var item StoreItem
+	if err := s.db.Table(s.tableName).Where("refresh = ?", refresh).Find(&item).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return s.toTokenInfo(item.Data)
 }
