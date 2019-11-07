@@ -86,9 +86,6 @@ func (cs *ClientStore) GetByID(id string) (cli oauth2.ClientInfo, err error) {
 
 	var item ClientItem
 	if err := cs.db.Table(cs.tableName).Where("id = ?", id).Find(&item).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return nil, nil
-		}
 		return nil, err
 	}
 
