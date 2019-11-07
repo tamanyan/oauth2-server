@@ -3,72 +3,120 @@ package store
 import (
 	// "errors"
 	// "sync"
-	"encoding/json"
+	"io"
+	"time"
 	// "fmt"
 	// "log"
 
-	"github.com/tidwall/buntdb"
+	"github.com/jinzhu/gorm"
 
 	"github.com/tamanyan/oauth2-server/models"
 	"github.com/tamanyan/oauth2-server/oauth2"
 )
 
-// NewMemoryClientStore create a token store instance based on memory
-func NewMemoryClientStore() (client *ClientStore, err error) {
-	client, err = NewClientStore(":memory:")
-	return
+// ClientItem data item
+type ClientItem struct {
+	//ID        int64 `gorm:"AUTO_INCREMENT"`
+	ID        string `gorm:"type:varchar(512)"`
+	Secret    string `gorm:"type:varchar(512)"`
+	Domain    string `gorm:"type:varchar(512)"`
+	UserID    string `gorm:"type:varchar(512)"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time `sql:"index"`
 }
 
-// NewClientStore create client store
-func NewClientStore(filename string) (client *ClientStore, err error) {
-	db, err := buntdb.Open(filename)
+// NewClientConfig create mysql configuration instance
+func NewClientConfig(dsn string, dbType string, tableName string) *ClientConfig {
+	return &ClientConfig{
+		DSN:       dsn,
+		DBType:    dbType,
+		TableName: tableName,
+	}
+}
+
+// ClientConfig xorm configuration
+type ClientConfig struct {
+	DSN       string
+	DBType    string
+	TableName string
+}
+
+// NewClientStore create a token store instance based on memory
+func NewClientStore(config *ClientConfig) (client *ClientStore, err error) {
+	db, err := gorm.Open(config.DBType, config.DSN)
 	if err != nil {
 		return
 	}
+	return NewClientWithDB(config, db)
+}
+
+// NewClientWithDB create client store
+func NewClientWithDB(config *ClientConfig, db *gorm.DB) (client *ClientStore, err error) {
 	client = &ClientStore{
-		db: db,
+		tableName: "client",
+		db:        db,
 	}
+
+	if config.TableName != "" {
+		client.tableName = config.TableName
+	}
+
+	if !db.HasTable(client.tableName) {
+		if err := db.Table(client.tableName).CreateTable(&ClientItem{}).Error; err != nil {
+			panic(err)
+		}
+	}
+
 	return
 }
 
 // ClientStore client information store
 type ClientStore struct {
-	db *buntdb.DB
+	tableName string
+	db        *gorm.DB
+	stdout    io.Writer
 }
 
 // GetByID according to the ID for the client information
 func (cs *ClientStore) GetByID(id string) (cli oauth2.ClientInfo, err error) {
-	verr := cs.db.View(func(tx *buntdb.Tx) (err error) {
-		jv, err := tx.Get(id)
-		if err != nil {
-			return
-		}
-		var cm models.Client
-		err = json.Unmarshal([]byte(jv), &cm)
-		if err != nil {
-			return
-		}
-		cli = &cm
-		return
-	})
-	if verr != nil {
-		if verr == buntdb.ErrNotFound {
-			return
-		}
-		err = verr
+	if id == "" {
+		return nil, nil
 	}
-	return
+
+	var item ClientItem
+	if err := cs.db.Table(cs.tableName).Where("id = ?", id).Find(&item).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return cs.toClientInfo(&item), nil
 }
 
 // Set set client information
 func (cs *ClientStore) Set(id string, cli oauth2.ClientInfo) (err error) {
-	jv, err := json.Marshal(cli)
-	if err != nil {
-		return
+	if id != cli.GetID() || id == "" {
+		return nil
 	}
-	err = cs.db.Update(func(tx *buntdb.Tx) error {
-		_, _, err := tx.Set(id, string(jv), nil)
-		return err
-	})
-	return
+
+	item := &ClientItem{
+		ID:     cli.GetID(),
+		Secret: cli.GetSecret(),
+		Domain: cli.GetDomain(),
+		UserID: cli.GetUserID(),
+	}
+
+	return cs.db.Table(cs.tableName).Save(item).Error
+}
+
+func (cs *ClientStore) toClientInfo(item *ClientItem) oauth2.ClientInfo {
+	var client = &models.Client{
+		ID:     item.ID,
+		Secret: item.Secret,
+		Domain: item.Domain,
+		UserID: item.UserID,
+	}
+	return client
 }

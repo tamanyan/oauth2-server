@@ -29,9 +29,9 @@ type StoreItem struct {
 	Data      string `gorm:"type:text"`
 }
 
-// NewConfig create mysql configuration instance
-func NewConfig(dsn string, dbType string, tableName string) *Config {
-	return &Config{
+// NewTokenConfig create mysql configuration instance
+func NewTokenConfig(dsn string, dbType string, tableName string) *TokenConfig {
+	return &TokenConfig{
 		DSN:         dsn,
 		DBType:      dbType,
 		TableName:   tableName,
@@ -39,8 +39,8 @@ func NewConfig(dsn string, dbType string, tableName string) *Config {
 	}
 }
 
-// Config xorm configuration
-type Config struct {
+// TokenConfig xorm configuration
+type TokenConfig struct {
 	DSN         string
 	DBType      string
 	TableName   string
@@ -48,7 +48,7 @@ type Config struct {
 }
 
 // NewStore create mysql store instance,
-func NewStore(config *Config, gcInterval int) (store oauth2.TokenStore, err error) {
+func NewStore(config *TokenConfig, gcInterval int) (store oauth2.TokenStore, err error) {
 	db, err := gorm.Open(config.DBType, config.DSN)
 	if err != nil {
 		return
@@ -57,7 +57,7 @@ func NewStore(config *Config, gcInterval int) (store oauth2.TokenStore, err erro
 }
 
 // NewStoreWithDB create store with config
-func NewStoreWithDB(config *Config, db *gorm.DB, gcInterval int) (store oauth2.TokenStore, err error) {
+func NewStoreWithDB(config *TokenConfig, db *gorm.DB, gcInterval int) (store oauth2.TokenStore, err error) {
 	tokenStore := &Store{
 		db:        db,
 		tableName: "oauth2_token",

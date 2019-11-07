@@ -19,12 +19,10 @@ import (
 	_profileController "github.com/tamanyan/oauth2-server/app/profile/http/controller"
 	_profileRepository "github.com/tamanyan/oauth2-server/app/profile/repository"
 	_profileUsecase "github.com/tamanyan/oauth2-server/app/profile/usecase"
-	"github.com/tamanyan/oauth2-server/errors"
 	"github.com/tamanyan/oauth2-server/generates"
 	"github.com/tamanyan/oauth2-server/manage"
 	"github.com/tamanyan/oauth2-server/models"
 	"github.com/tamanyan/oauth2-server/oauth2"
-	"github.com/tamanyan/oauth2-server/server"
 	"github.com/tamanyan/oauth2-server/store"
 )
 
@@ -35,51 +33,24 @@ var (
 func newManager() oauth2.Manager {
 	manager := manage.NewDefaultManager()
 	// token memory store
-	manager.MustTokenStorage(store.NewStore(store.NewConfig("./tmp/storage/token.db", "sqlite3", "token"), 600))
+	manager.MustTokenStorage(store.NewStore(store.NewTokenConfig("./tmp/storage/oauth2.db", "sqlite3", "oauth2_token"), 600))
 	manager.MapAccessGenerate(generates.NewJWTAccessGenerate([]byte(os.Getenv("JWT_SECRET_KEY")), jwt.SigningMethodHS512))
 
 	// client memory store
-	clientStore, err := store.NewClientStore("./tmp/storage/client.db")
+	clientStore, err := store.NewClientStore(store.NewClientConfig("./tmp/storage/oauth2.db", "sqlite3", "client"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	clientStore.Set("sample", &models.Client{
+	err = clientStore.Set("sample", &models.Client{
 		ID:     "sample",
 		Secret: "999999",
 		Domain: "http://localhost",
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 	manager.MapClientStorage(clientStore)
 	return manager
-}
-
-func setupOAuth2ServerConfigcation(srv *server.Server) {
-	srv.SetAllowGetAccessRequest(false)
-	srv.SetClientInfoHandler(server.ClientFormHandler)
-
-	srv.SetClientAuthorizedHandler(func(clientID string, grant oauth2.GrantType) (allowed bool, err error) {
-		// log.Println(clientID, grant)
-		allowed = true
-		return
-	})
-
-	srv.SetInternalErrorHandler(func(err error) (re *errors.Response) {
-		log.Println("Internal Error:", err.Error())
-		return
-	})
-
-	srv.SetResponseErrorHandler(func(re *errors.Response) {
-		log.Println("Response Error:", re.Error.Error())
-	})
-
-	srv.SetPasswordAuthorizationHandler(func(username, password string) (userID string, err error) {
-		// log.Println(username, password)
-		if username == "test" && password == "test" {
-			userID = "test"
-			return
-		}
-		err = errors.ErrInvalidGrant
-		return
-	})
 }
 
 func main() {
