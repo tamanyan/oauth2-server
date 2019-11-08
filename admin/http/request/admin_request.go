@@ -1,6 +1,6 @@
 package request
 
-// AdminRequest GET /admin validation
-type AdminRequest struct {
-	Sample    string `form:"sample" validate:"required"`
+// AdminSignupRequest GET /admin validation
+type AdminSignupRequest struct {
+	Sample string `form:"sample" validate:"required"`
 }

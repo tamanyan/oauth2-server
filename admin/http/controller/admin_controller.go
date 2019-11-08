@@ -2,10 +2,11 @@ package controller
 
 import (
 	"net/http"
+
 	"github.com/labstack/echo"
 
-	"github.com/tamanyan/oauth2-server/middleware"
 	"github.com/tamanyan/oauth2-server/admin"
+	"github.com/tamanyan/oauth2-server/middleware"
 )
 
 // AdminHandler represent the httphandler for admin
@@ -18,7 +19,7 @@ func NewAdminHandler(e *echo.Echo, middleware *middleware.GoMiddleware, us admin
 	handler := &AdminHandler{
 		AdminUsecase: us,
 	}
-	e.GET("/admin", handler.GetData)
+	e.GET("/_admin/", handler.GetData)
 }
 
 // GetData will get data by ID

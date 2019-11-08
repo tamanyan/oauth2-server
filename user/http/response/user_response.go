@@ -6,28 +6,29 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/tamanyan/oauth2-server/common"
+	"github.com/tamanyan/oauth2-server/user"
 )
 
-// AdminResponse usecase
-type AdminResponse struct {
+// UserResponse usecase
+type UserResponse struct {
 	StatucCode int
 	Data       echo.Map
 }
 
-// NewAdminResponse will create a new AdminResponse
-func NewAdminResponse(data interface{}) common.Response {
-	return &AdminResponse{
+// NewUserResponse will create a new UserResponse
+func NewUserResponse(data interface{}) common.Response {
+	return &UserResponse{
 		StatucCode: http.StatusOK,
 		Data:       echo.Map{},
 	}
 }
 
 // GetStatusCode Get HTTP status code
-func (r *AdminResponse) GetStatusCode() int {
+func (r *UserResponse) GetStatusCode() int {
 	return r.StatucCode
 }
 
 // GetData Get ehco Map data
-func (r *AdminResponse) GetData() echo.Map {
+func (r *UserResponse) GetData() echo.Map {
 	return r.Data
 }

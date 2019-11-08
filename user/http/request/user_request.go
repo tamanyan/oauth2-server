@@ -1,6 +1,6 @@
 package request
 
-// ProfileRequest GET /profile validation
-type ProfileRequest struct {
+// UserRequest GET /user validation
+type UserRequest struct {
 	Sample    string `form:"sample" validate:"required"`
 }

@@ -10,16 +10,16 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 
+	"github.com/tamanyan/oauth2"
 	_adminController "github.com/tamanyan/oauth2-server/admin/http/controller"
 	_adminRepository "github.com/tamanyan/oauth2-server/admin/repository"
 	_adminUsecase "github.com/tamanyan/oauth2-server/admin/usecase"
 	_middleware "github.com/tamanyan/oauth2-server/middleware"
 	_oauth2Controller "github.com/tamanyan/oauth2-server/oauth2/http/controller"
 	_oauth2Usecase "github.com/tamanyan/oauth2-server/oauth2/usecase"
-	_profileController "github.com/tamanyan/oauth2-server/profile/http/controller"
-	_profileRepository "github.com/tamanyan/oauth2-server/profile/repository"
-	_profileUsecase "github.com/tamanyan/oauth2-server/profile/usecase"
-	"github.com/tamanyan/oauth2"
+	_userController "github.com/tamanyan/oauth2-server/user/http/controller"
+	_userRepository "github.com/tamanyan/oauth2-server/user/repository"
+	_userUsecase "github.com/tamanyan/oauth2-server/user/usecase"
 	"github.com/tamanyan/oauth2/generates"
 	"github.com/tamanyan/oauth2/manage"
 	"github.com/tamanyan/oauth2/models"
@@ -68,9 +68,9 @@ func main() {
 	au := _oauth2Usecase.NewOAuth2Usecase(manager, timeoutContext)
 	_oauth2Controller.NewOAuth2Handler(e, goMiddleware, manager, au)
 
-	pr := _profileRepository.NewProfileRepository()
-	pu := _profileUsecase.NewProfileUsecase(pr)
-	_profileController.NewProfileHandler(e, goMiddleware, pu)
+	ur := _userRepository.NewUserRepository()
+	uu := _userUsecase.NewUserUsecase(ur)
+	_userController.NewUserHandler(e, goMiddleware, uu)
 
 	adr := _adminRepository.NewAdminRepository()
 	adu := _adminUsecase.NewAdminUsecase(adr)

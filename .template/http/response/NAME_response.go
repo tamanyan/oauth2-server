@@ -16,7 +16,7 @@ type {{camelcase .NAME}}Response struct {
 }
 
 // New{{camelcase .NAME}}Response will create a new {{camelcase .NAME}}Response
-func New{{camelcase .NAME}}Response(data: interface{}) common.Response {
+func New{{camelcase .NAME}}Response(data interface{}) common.Response {
 	return &{{camelcase .NAME}}Response{
 		StatucCode: http.StatusOK,
 		Data:       echo.Map{},
