@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/tamanyan/oauth2-server/app/admin"
+	"github.com/tamanyan/oauth2-server/admin"
 )
 
 // AdminRepository repository

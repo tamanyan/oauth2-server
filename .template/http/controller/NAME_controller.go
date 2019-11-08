@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"github.com/labstack/echo"
 
-	"github.com/tamanyan/oauth2-server/app/middleware"
-	"github.com/tamanyan/oauth2-server/app/{{lowercaseletters .NAME}}"
+	"github.com/tamanyan/oauth2-server/middleware"
+	"github.com/tamanyan/oauth2-server/{{lowercaseletters .NAME}}"
 )
 
 // {{camelcase .NAME}}Handler represent the httphandler for {{lowercaseletters .NAME}}

@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"github.com/tamanyan/oauth2-server/app/{{lowercaseletters .NAME}}"
+	"github.com/tamanyan/oauth2-server/{{lowercaseletters .NAME}}"
 )
 
 // {{camelcase .NAME}}Usecase usecase

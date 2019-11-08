@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/tamanyan/oauth2-server/app/profile"
+	"github.com/tamanyan/oauth2-server/profile"
 )
 
 // ProfileRepository repository

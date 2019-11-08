@@ -9,11 +9,11 @@ import (
 	"github.com/labstack/echo"
 	"gopkg.in/go-playground/validator.v9"
 
-	"github.com/tamanyan/oauth2-server/app/common"
-	"github.com/tamanyan/oauth2-server/app/middleware"
-	_oauth2 "github.com/tamanyan/oauth2-server/app/oauth2"
-	"github.com/tamanyan/oauth2-server/app/oauth2/http/request"
-	"github.com/tamanyan/oauth2-server/app/oauth2/http/response"
+	"github.com/tamanyan/oauth2-server/common"
+	"github.com/tamanyan/oauth2-server/middleware"
+	_oauth2 "github.com/tamanyan/oauth2-server/oauth2"
+	"github.com/tamanyan/oauth2-server/oauth2/http/request"
+	"github.com/tamanyan/oauth2-server/oauth2/http/response"
 	"github.com/tamanyan/oauth2/errors"
 	"github.com/tamanyan/oauth2"
 )

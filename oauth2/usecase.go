@@ -3,7 +3,7 @@ package oauth2
 import (
 	"context"
 
-	"github.com/tamanyan/oauth2-server/app/oauth2/http/request"
+	"github.com/tamanyan/oauth2-server/oauth2/http/request"
 	"github.com/tamanyan/oauth2"
 )
 

@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"github.com/tamanyan/oauth2-server/app/profile"
+	"github.com/tamanyan/oauth2-server/profile"
 )
 
 // ProfileUsecase usecase

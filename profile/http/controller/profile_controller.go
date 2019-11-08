@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"github.com/labstack/echo"
 
-	"github.com/tamanyan/oauth2-server/app/middleware"
-	"github.com/tamanyan/oauth2-server/app/profile"
+	"github.com/tamanyan/oauth2-server/middleware"
+	"github.com/tamanyan/oauth2-server/profile"
 )
 
 // ProfileHandler represent the httphandler for profile

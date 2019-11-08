@@ -10,7 +10,7 @@ require (
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/leodido/go-urn v1.2.0 // indirect
-	github.com/tamanyan/oauth2 v0.0.0-20191108061148-6305a6464942
+	github.com/tamanyan/oauth2 v0.0.0-20191108090336-1e2238b01d6d
 	github.com/valyala/fasttemplate v1.1.0 // indirect
 	golang.org/x/crypto v0.0.0-20191107222254-f4817d981bb6 // indirect
 	gopkg.in/LyricTian/lib.v2 v2.2.7 // indirect

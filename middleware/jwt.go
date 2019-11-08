@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 
-	"github.com/tamanyan/oauth2-server/app/common"
+	"github.com/tamanyan/oauth2-server/common"
 	"github.com/tamanyan/oauth2/errors"
 )
 

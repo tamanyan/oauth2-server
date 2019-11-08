@@ -11,6 +11,7 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/denisenkom/go-mssqldb v0.0.0-20190515213511-eb9f6a1743f3/go.mod h1:zAg7JM8CkOJ43xKXIj7eRO9kmWm/TW578qo+oDO6tuM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
@@ -104,6 +105,8 @@ github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJy
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/tamanyan/oauth2 v0.0.0-20191108061148-6305a6464942 h1:YhOkaI151UW3OA+7NDT+1i8MeJm6l2HXmoNvrWAD8oc=
 github.com/tamanyan/oauth2 v0.0.0-20191108061148-6305a6464942/go.mod h1:b08xQ+7k72j1zuZh0RxCTwpHOf6NahaByE9tyVIs2kE=
+github.com/tamanyan/oauth2 v0.0.0-20191108090336-1e2238b01d6d h1:foaO+CWha1HFEL0fIM1CbyLlO5yF3Sd7g5bQofx4dbs=
+github.com/tamanyan/oauth2 v0.0.0-20191108090336-1e2238b01d6d/go.mod h1:b08xQ+7k72j1zuZh0RxCTwpHOf6NahaByE9tyVIs2kE=
 github.com/tamanyan/oauth2 v1.0.0 h1:F0SsyqiZ94pR/Ki2KnpKmwPg2HxIyDX3KhEDkRaJkdU=
 github.com/tamanyan/oauth2 v1.0.0/go.mod h1:Bm9/W7OrpR+mpb/dFikUXKAM0RV3yYpTz1K0buSAXTg=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
