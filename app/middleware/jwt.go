@@ -7,7 +7,7 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"github.com/tamanyan/oauth2-server/app/common"
-	"github.com/tamanyan/oauth2-server/errors"
+	"github.com/tamanyan/oauth2/errors"
 )
 
 // GoMiddleware represent the data-struct for middleware

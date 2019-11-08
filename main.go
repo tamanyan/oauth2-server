@@ -19,11 +19,11 @@ import (
 	_profileController "github.com/tamanyan/oauth2-server/app/profile/http/controller"
 	_profileRepository "github.com/tamanyan/oauth2-server/app/profile/repository"
 	_profileUsecase "github.com/tamanyan/oauth2-server/app/profile/usecase"
-	"github.com/tamanyan/oauth2-server/generates"
-	"github.com/tamanyan/oauth2-server/manage"
-	"github.com/tamanyan/oauth2-server/models"
-	"github.com/tamanyan/oauth2-server/oauth2"
-	"github.com/tamanyan/oauth2-server/store"
+	"github.com/tamanyan/oauth2"
+	"github.com/tamanyan/oauth2/generates"
+	"github.com/tamanyan/oauth2/manage"
+	"github.com/tamanyan/oauth2/models"
+	"github.com/tamanyan/oauth2/store"
 )
 
 var (
@@ -33,7 +33,7 @@ var (
 func newManager() oauth2.Manager {
 	manager := manage.NewDefaultManager()
 	// token memory store
-	manager.MustTokenStorage(store.NewStore(store.NewTokenConfig("./tmp/storage/oauth2.db", "sqlite3", "oauth2_token"), 600))
+	manager.MustTokenStorage(store.NewTokenStore(store.NewTokenConfig("./tmp/storage/oauth2.db", "sqlite3", "oauth2_token"), 600))
 	manager.MapAccessGenerate(generates.NewJWTAccessGenerate([]byte(os.Getenv("JWT_SECRET_KEY")), jwt.SigningMethodHS512))
 
 	// client memory store

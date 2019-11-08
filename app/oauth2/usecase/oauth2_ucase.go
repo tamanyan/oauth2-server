@@ -7,8 +7,8 @@ import (
 
 	_oauth2 "github.com/tamanyan/oauth2-server/app/oauth2"
 	"github.com/tamanyan/oauth2-server/app/oauth2/http/request"
-	"github.com/tamanyan/oauth2-server/errors"
-	"github.com/tamanyan/oauth2-server/oauth2"
+	"github.com/tamanyan/oauth2"
+	"github.com/tamanyan/oauth2/errors"
 )
 
 // OAuth2Usecase usecase

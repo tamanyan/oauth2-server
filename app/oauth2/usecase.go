@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/tamanyan/oauth2-server/app/oauth2/http/request"
-	"github.com/tamanyan/oauth2-server/oauth2"
+	"github.com/tamanyan/oauth2"
 )
 
 // Usecase represent the article's usecases

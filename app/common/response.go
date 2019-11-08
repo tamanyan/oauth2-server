@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo"
 
-	"github.com/tamanyan/oauth2-server/errors"
+	"github.com/tamanyan/oauth2/errors"
 )
 
 // Response represent the oauth2's response
